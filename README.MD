@@ -14,8 +14,8 @@
 
 #### Update Login Controller
 
-- [] right after isPasswordCorrect
-- [] check if user.isVerified, if not 401
+- [x] right after isPasswordCorrect
+- [x] check if user.isVerified, if not 401
 
 #### Verify Email Controller
 
@@ -35,10 +35,10 @@
 
 #### Email Setup
 
-- [] re-watch project 08
-- [] ethereal credentials (create account/login)
-- [] install nodemailer
-- [] create (nodemailerConfig, sendEmail,
+- [x] re-watch project 08
+- [x] ethereal credentials (create account/login)
+- [x] install nodemailer
+- [x] create (nodemailerConfig, sendEmail,
   sendResetPasswordEmail, sendVerficationEmail) files in utils
 
 #### Send Verification Link
