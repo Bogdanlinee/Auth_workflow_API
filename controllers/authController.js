@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Token = require('../models/Token');
 const { StatusCodes } = require('http-status-codes');
 const CustomError = require('../errors');
 const { attachCookiesToResponse, createTokenUser, sendVerificationEmail } = require('../utils');
@@ -52,9 +53,22 @@ const login = async (req, res) => {
   }
 
   const tokenUser = createTokenUser(user);
-  attachCookiesToResponse({ res, user: tokenUser });
 
-  res.status(StatusCodes.OK).json({ user: tokenUser });
+  // create refresh token
+  let refreshToken = '';
+
+  // check for existing token
+  refreshToken = crypto.randomBytes(40).toString('hex');
+  const userAgent = req.headers['user-agent'];
+  const ip = req.ip;
+  const userToken = { refreshToken, ip, userAgent, user: user._id }
+
+  const token = await Token.create(userToken);
+
+
+  // attachCookiesToResponse({ res, user: tokenUser });
+
+  res.status(StatusCodes.OK).json({ user: tokenUser, token });
 };
 
 const verifyEmail = async (req, res) => {
@@ -68,10 +82,6 @@ const verifyEmail = async (req, res) => {
   if (!user) {
     throw new CustomError.UnauthenticatedError('Invalid Credentials');
   }
-
-  console.log(user.verificationToken)
-  console.log(verificationToken)
-
 
   if (user.verificationToken !== verificationToken) {
     throw new CustomError.UnauthenticatedError('Invalid verification token');
