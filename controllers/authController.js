@@ -58,17 +58,24 @@ const login = async (req, res) => {
   let refreshToken = '';
 
   // check for existing token
-  refreshToken = crypto.randomBytes(40).toString('hex');
-  const userAgent = req.headers['user-agent'];
-  const ip = req.ip;
-  const userToken = { refreshToken, ip, userAgent, user: user._id }
+  const existingToken = await Token.findOne({ user: user._id });
 
-  const token = await Token.create(userToken);
+  if (existingToken) {
+    const { isValid } = existingToken;
+    if (!isValid) {
+      throw new CustomError.UnauthenticatedError('Invalid Credentials');
+    }
+    refreshToken = existingToken.refreshToken;
+  } else {
+    const userAgent = req.headers['user-agent'];
+    const ip = req.ip;
+    refreshToken = crypto.randomBytes(40).toString('hex');
+    const userToken = { refreshToken, ip, userAgent, user: user._id };
+    await Token.create(userToken);
+  }
 
-
-  // attachCookiesToResponse({ res, user: tokenUser });
-
-  res.status(StatusCodes.OK).json({ user: tokenUser, token });
+  attachCookiesToResponse({ res, user: tokenUser, refreshToken });
+  res.status(StatusCodes.OK).json({ user: tokenUser });
 };
 
 const verifyEmail = async (req, res) => {
@@ -96,10 +103,18 @@ const verifyEmail = async (req, res) => {
 };
 
 const logout = async (req, res) => {
-  res.cookie('token', 'logout', {
+  await Token.findOneAndDelete({ user: req.user.userId });
+
+  res.cookie('accessToken', 'logout', {
     httpOnly: true,
-    expires: new Date(Date.now() + 1000),
+    expires: new Date(Date.now()),
   });
+
+  res.cookie('refreshToken', 'logout', {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+
   res.status(StatusCodes.OK).json({ msg: 'user logged out!' });
 };
 
